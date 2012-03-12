@@ -1,0 +1,243 @@
+// include file for index.php  :)
+var backend='http://www.feedinator.com/gui/backend.php';
+var current_view='';		//  category or feed - for what's currently viewed
+var current_view_id='';		//  id of the category or feed currently being viewed.
+var set_mark_id='';		//  id of an entry to toggle the mark - normally not used.
+var status_div='left_notify'; //  id of the status div
+var entries_data='';		// hash containing all data about the entries
+
+// Take a json array and populate the entries_list_div
+function populate_list()
+{
+	var json=entries_data;
+	var div='entries_list_div';
+	$(div).innerHTML='';
+	var table_data=''
+	table_data='<table class="headlinesList" id="headlinesList" width="100%">';
+	// do populate stuff here
+	for(i in json.entries)
+	{
+		var readunread=json.entries[i].unread?'unread':'read';
+		var link='javascript:show_entry('+i+');';
+		table_data+="<tr class='even"+readunread+"' id='RROW-"+i+"'>";
+		table_data+='<td><div id="FMARKPIC-'+i+'"><img src="images/'+json.entries[i].img+'" onclick="javascript:toggleMark('+i+');"></div></td>';
+		table_data+="<td><a href='javascript:remove_entry("+i+");'>-</a></td>";
+		table_data+="<td width='22%'><a href='"+link+"'>"+json.entries[i].feed_name+"</a></td>";
+		table_data+="<td width='60%'><a href='"+link+"'>"+json.entries[i].title+"</a></td>";
+		table_data+="<td width='12%'>"+json.entries[i].updated+"</td>";
+		table_data+="<td><a href='"+json.entries[i].link+"' target='_blank'>-></a></td>";
+		table_data+='</tr>\n';
+	}
+	table_data+="</table>";
+	$(div).innerHTML+=table_data;
+}
+
+
+// Update the link for a given feed
+function update_link(form)
+{
+	$('menu_status').innerHTML='Updating...';
+	var link	=form.update_link_text.value;
+	link		=encodeURIComponent(link);
+	var url		='op=update_feed_link&id='+current_view_id+'&skip_div=1&link='+link;
+	var myAjax	=new Ajax.Updater('menu_status',backend,{method:'POST',parameters:url});
+}
+
+//toggle the visibility of a given passed div id
+function toggle_visible(id)
+{
+	if($(id).visible()){$(id).hide();}
+	else{$(id).show();}
+}
+
+// Hides the table row of a given id, and makes an ajax call to mark read in the backend.
+function remove_entry(id)
+{
+	var url='op=mark_read&id='+id;
+	decrement_count();
+	oldEl = document.getElementById('RROW-'+id);
+	parentEl = oldEl.parentNode;
+	parentEl.removeChild(oldEl);	
+	var myAjax=new Ajax.Updater(status_div,backend,{method:'get',parameters:url,onFailure: reportError});
+}
+// Toggles the marked/unmarked for a given id, and replaces the div with the src for the appropriate image.
+function toggleMark(id) 
+{
+	set_mark_id=id;
+	var mark_div='FMARKPIC-' +id;
+	var page_mark_div='EMARKPIC-' +id;
+	var url='op=togglemark&id=' + id;
+	var myAjax=new Ajax.Updater(mark_div,backend,{
+		method:'get',
+		parameters:url,onFailure: reportError,
+		onComplete:function(){try{$(page_mark_div).innerHTML=$(mark_div).innerHTML;}catch(err){}}
+	});
+}
+function reportError(request) 
+{
+	alert("There was a problem");
+}
+// Populate the list_div with the entries for a feed of the given id
+function feed_entries(id)
+{
+	try{$('menu_status').innerHTML='Loading...';}catch(err){} // may be null
+	current_view='feed';
+	current_view_id=id;
+	var div='entries_list_div';
+	var menuurl='op=print_menu&id='+id+'&view_mode=feed';
+	var url='op=feed_entries&id=' + id;
+	var jsonurl='op=json_feed_entries&id=' + id;
+	new Ajax.Request(backend, {
+	  method:'get',
+	  parameters:jsonurl,
+	  onSuccess: function(transport){
+	  	var myAjax=new Ajax.Updater('settings_div',backend,{method:'get',parameters:menuurl});
+	  	//var myAjax=new Ajax.Updater(div,backend,{method:'get',parameters:url});
+		$(div).innerHTML='Loading...';
+	  	var json = transport.responseText;
+		try{entries_data=eval('('+json+')');}catch(err){alert(err.message);$(div).innerHTML=json;return;}
+		populate_list();
+		try{$('menu_status').innerHTML='';}catch(err){} // may be null
+	  }
+	});
+}
+// Set the current_view_id to look read, and the number unread to zero.  
+// Could throw errors if the div has since been hidden or removed.
+function empty_count()
+{
+	if(current_view == 'feed')
+		{name_div='FEEDROW-'+current_view_id;}
+	else
+		{name_div='CATROW-'+current_view_id;}
+	var unread_div='FEEDU-'+current_view_id;
+	// These are expected errors and should not print errors.  
+	// expected because the div could have been hidden.
+	try{document.getElementById(unread_div).innerHTML='0';}catch (err){} 
+	try{document.getElementById(name_div).className='odd';}catch (err){}
+	try{entries_data=[]}catch (err){}
+}
+// Lowers the unread count for the current_view_id by one - if that zeroes, calls empty_count.
+function decrement_count()
+{
+	var cr_view_div='FEEDU-'+current_view_id;
+	var current_value=document.getElementById(cr_view_div).innerHTML;
+	current_value=current_value-1;
+	document.getElementById(cr_view_div).innerHTML=current_value;
+	if(current_value<=0){empty_count();}
+}
+//populate list_div with the entries for a given category id
+function category_entries(id)
+{
+	try{$('menu_status').innerHTML='Loading...';}catch(err){}	// May be null
+	current_view='category';
+	var div='entries_list_div';
+	current_view_id=id;
+	var menuurl='op=print_menu&view_mode=category&id=' +id;
+	var url='op=category_entries&id='+id;
+	var myAjax=new Ajax.Updater('settings_div',backend,{method:'get',parameters:menuurl});
+	var myAjax=new Ajax.Updater({ success: 'entries_list_div', failure: status_div },backend,{
+		method:'get',
+		parameters:url,
+		onFailure: reportError,
+		onComplete:function(transport){
+			$('entries_list_div').scrollTop=0;
+			try{$('menu_status').innerHTML='';}catch(err){}
+		}
+	});
+}
+// Populates view_div with the content for a given id.
+function show_entry(id,previous,next)
+{
+	try{previous=entries_data[id].previous_id} catch(err){}
+	try{next=entries_data[id].next_id}catch(err){}
+	list_row=document.getElementById('RROW-'+id);
+	list_row.className=list_row.className.replace("unread","");
+	var url='op=view_entry&id='+id+'&previous='+previous+'&next='+next;
+	var myAjax=new Ajax.Updater('view_div',backend,{
+		method:'get',
+		parameters:url,
+		onComplete:function(){$('view_div').scrollTop=0;}
+	});
+	decrement_count();
+}
+// Populates the feeds_div with a list of feeds.
+function feedList()
+{
+	$('feeds_status').innerHTML='<img src="/images/mozilla_giallo.gif" height="10">';
+	current_view='feed';
+	var url='op=feed_list';
+	var myAjax=new Ajax.Updater('feeds_div',backend,{
+		method:'get',
+		parameters:url,
+		onComplete:function(){$('feeds_status').innerHTML='';}
+	});
+}
+// Populates the feeds_div with a list of categories.
+// If id is given, shows the feeds inside that category
+function categoryList(id)
+{
+	$('feeds_status').innerHTML='<img src="/images/mozilla_giallo.gif" height="10">';
+	current_view='category';
+	var url='op=category_list&id='+id;
+	var myAjax=new Ajax.Updater('feeds_div',backend,{
+		method:'get',
+		parameters:url,
+		onComplete:function(){$('feeds_status').innerHTML='';}
+	});
+}
+// Marks all read for the current_view_id for either feed or category.
+function empty_current()
+{
+	document.getElementById('menu_status').innerHTML='Emptying...';
+	var url='';
+	if(current_view == 'feed'){url='op=empty_feed&id='+current_view_id;}
+	if(current_view == 'category'){url='op=empty_category&id='+current_view_id;}
+	var myAjax=new Ajax.Updater('entries_list_div',backend,{
+		method:'get',
+		parameters:url,
+		onComplete:function(){$('entries_list_div').scrollTop=0;}
+	});
+	empty_count();
+}
+// Populates list_div with all entries marked as marked
+function marked_entries()
+{
+	$('menu_status').innerHTML='Loading...';
+	var url='op=marked_entries';
+	var myAjax=new Ajax.Updater('entries_list_div',backend,{method:'get',parameters:url});
+}
+function showExtendedContentPane(feed_id)
+{
+	$('extendedContentPane').innerHTML='Loading...';
+	var url='op=extended_content&id='+feed_id;
+	var myAjax=new Ajax.Updater('extendedContentPane',backend,{method:'get',parameters:url});
+}
+function customize(form)
+{
+	$('menu_status').innerHTML='Loading...';
+	var index=form.select.selectedIndex;
+	var selvalue=form.select.options[index].value;
+	if(selvalue == ''){return;}
+	var url='';
+	if(selvalue == 'delete'){url='op=delete_feed&id='+current_view_id;}
+	else if(selvalue=='default' || selvalue=='link' || selvalue=='extended'||selvalue=='proxy')
+		{url='op=update_viewmode&view_mode='+selvalue+'&id='+current_view_id+'&skip_div=1';}
+	else
+		{url='op=update_category&id='+current_view_id+'&category='+selvalue+'&skip_div=1';}
+	var myAjax=new Ajax.Updater('settings_div',backend,{method:'get',parameters:url});
+}
+function add_feed(form)
+{
+	$('menu_status').innerHTML='Adding...';
+	var newfeed	=form.add_feed_text.value;
+	newfeed		=encodeURIComponent(newfeed);
+	var url		='op=add_feed&url='+newfeed;
+	var myAjax	=new Ajax.Updater('menu_status',backend,{method:'POST',parameters:url});
+}
+function rename_feed(form)
+{
+	$('menu_status').innerHTML='Submitting...';
+	var newname=form.rename_feed_text.value;
+	var url='op=rename_feed&id='+current_view_id +'&name='+newname;
+	var myAjax=new Ajax.Updater('menu_status',backend,{method:'get',parameters:url});
+}
