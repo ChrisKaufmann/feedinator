@@ -36,7 +36,16 @@ class Feed
 	{
 		if(!$id){return;}
 		global $database;
-		$query="select id from ". $this->entries_table ." where feed_id='$feed_id' and id > '$id' and unread=1 limit 1";
+		$query="select id from ". $this->entries_table ." where feed_id='$feed_id' and id > '$id' limit 1";
+		$result=$database->query($query);
+		$vals=mysql_fetch_array($result);
+        return $vals[0];
+	}
+	function previousEntry($feed_id,$id)
+	{
+		if(!$id){return;}
+		global $database;
+		$query="select id from ". $this->entries_table ." where feed_id='$feed_id' and id < '$id' order by id DESC limit 1";
 		$result=$database->query($query);
 		$vals=mysql_fetch_array($result);
         return $vals[0];
