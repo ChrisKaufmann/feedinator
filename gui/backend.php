@@ -456,54 +456,82 @@
 	function print_entry()
 	{
 		global $entry,$feed;
-		$id=$_REQUEST['id'];
-		$previous=$_REQUEST['previous'];
-		$next=$_REQUEST['next'];
-		$feedorcat=$_REQUEST['method'];
-		$debug=$_REQUEST['debug'];
-		$feed_id=$entry->feedID($id);
+		$id=		$_REQUEST['id'];
 		if(!isset($id)){print "No feed specified";return;}
-		$data=$entry->entryData($id);
-		$view_mode=$_REQUEST['view_mode']?$_REQUEST['view_mode']:$feed->viewMode($feed_id);
-		$autoscroll=$feed->feedAutoScroll($feed_id);
+//		$previous=	$_REQUEST['previous'];
+//		$next=		$_REQUEST['next'];
+//		$feedorcat=	$_REQUEST['method'];
+		$debug=		$_REQUEST['debug'];
+		$feed_id=	$entry->feedID($id);
+		$data=		$entry->entryData($id);
+		$feed_data=	$feed->feedData($feed_id);
+		$feedname=	substr($feed_data['title'],0,40);
+		$feedtitle=	substr($data['title'],0,150);
+		if(!$data){print "No data for entry $id found";return;}
 		if(!$autoscroll){$autoscroll=0;}
 
-		if($debug){print "id=$id<br>\n";}
-		if($debug){print "title={$data['title']}<br>
-			link={$data['link']}<br>
-			marked={$data['marked']}<br>
-			show_extended={$data['show_extended']}<br>
-			content={$data['content']}<br>\n";}
-		if(!$data){print "No data for entry $id found";return;}
-		if($data['icon_url']){$feed_icon="<img class=\"feedIcon\" src=\"".$data['icon_url']."\">";}
-		else{$feed_icon="&nbsp;";}
-		if ($data["comments"] && $data["link"] != $data["comments"]) {
-			$entry_comments = "(<a href=\"".$data["comments"]."\">Comments</a>)";
-		} else {$entry_comments = "";	}
-		$marked=$data['marked'];
-		if($marked){$markunmark='mark_set.png';}else{$markunmark='mark_unset.png';}
+		//set a few variables.  
+		$autoscroll=	$_REQUEST['autoscroll']	?$_REQUEST['autoscroll']:$feed_data['autoscroll_px'];
+		$feed_icon=		$data['icon_url']		?"<img class=\"feedIcon\" src=\"".$data['icon_url']."\">":"&nbsp;";
+		$view_mode=		$_REQUEST['view_mode']	?$_REQUEST['view_mode']:$feed->viewMode($feed_id);
+		$markunmark=	$data['marked']			?'mark_set.png':'mark_unset.png';
+		$entry_comments=$data["comments"] && $data["link"] != $data["comments"]?"(<a href=\"".$data["comments"]."\">Comments</a>)":"";
+
+		if($debug)
+		{
+			print "id=$id<br>\n";
+			print "title={$data['title']}<br>
+				link={$data['link']}<br>
+				marked={$data['marked']}<br>
+				show_extended={$data['show_extended']}<br>
+				content={$data['content']}<br>\n";
+		}
+
 		//print the header, always the same.
 		print "<div id='content_container'>\n";
 		print "<div id='table_container' style='z-index:1;position:relative;opacity:1;background-color:#FFFFFF'>\n";
-		print "<table width='100%'><tr><td>". $data["title"] ."</td>
-			<td align='right'>
+		print "<table width='100%'>
+				<tr class='evenunread'>
+				<td width=130>$feedname</td>
+				<td style='text-overflow:ellipsis;white-space:nowrap;overflow:hidden'>$feedtitle</td>
 			";
+
+		//print a select for some ease of use
+		print "<td width=100 align='right'>
+		<div id='viewentry-dropdown'>
+			<select name='select' onchange='customizeentry(this.form)'>
+				<option value=''>--Mark--</option>
+				<option value='unread'>Unread</option>
+				";
+		foreach($view_options as $option)
+		{
+			$lc_option=strtolower($option);
+			if($lc_option == $view_mode){$option="*$option";}
+			print "<option value='$lc_option'>$option\n";
+		}
+		print "
+				<option value=''>--View--</option>
+				<option value='viewdefault'>Default</option>
+				<option value='viewproxy'>Proxy</option>
+				<option valie='viewlink'>Link</option>
+			</option>
+		</div></td>
+		";
 
 		// Print a Google +1 button
 		print '
-		<!-- Place this tag where you want the +1 button to render -->
+		<td align="right" width=22>
 		<g:plusone size="small" annotation="none" href="'. $data['link'].'"></g:plusone>
-
-		<!-- Place this render call where appropriate -->
 		<script type="text/javascript">
 		  (function() { var po = document.createElement("script"); po.type = "text/javascript"; po.async = true; po.src = "https://apis.google.com/js/plusone.js"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(po, s); })();
 		</script>
+		</td>
 		';
 		//Print a tweet button
-			print "	<a href='https://twitter.com/home?status=". $data['link']. "' target='_blank' ><img src='025.png' height='15' ></a>\n";
+			print "<td align='right' width=18><a href='https://twitter.com/home?status=". $data['link']. "' target='_blank' ><img src='025.png' height='15' ></a></td>\n";
+		//Print the new, previous, etc buttons
 			print "
-
-			<td align='right' width=22><a href='".$data['link']. "' target='_blank'>New</a><td>
+			<td align='right' width=22><a href='".$data['link']. "' target='_blank'>New</a>
 			<td align='right' width=22><a href=\"javascript:showPreviousEntry('$id');\">Previous</a>
 			<td align='right' width=22><a href=\"javascript:showNextEntry('$id');\">Next</a>
 			<td align='right' width=22><div id='EMARKPIC-$id'><img src='images/$markunmark' alt='Set mark' onclick='javascript:toggleMark($id);'></div></td>
@@ -520,15 +548,16 @@
 				print "</div>\n";
 				break;
 			case "proxy":
-				print_proxy_data($data['link']);
-				return;
+				print_link_data($data['link']);
+//				print_proxy_data($data['link']);
 				break;
 			case "extended":
 				print "<div class=\"postContent\">" . $data["content"] . "</div>\n";
 				viewExtendedPage($data['link']);
 				break;
 			case "default":
-				print "<div class=\"postContent\">" . $data["content"] . "</div>\n";
+				print "<div style='position:absolute;height:70%;overflow:auto;width:100%' >" . $data["content"] . "</div>\n";
+
 				break;
 		};
 		print "</div>";
@@ -790,22 +819,25 @@
 	//
 	function print_link_data($link)
 	{
-		print "link='$link'<br>\n";
+		$link=un_escape($link);
 		$ch = curl_init();
 		$timeout = 10; // set to zero for no timeout
 		curl_setopt ($ch, CURLOPT_URL, $link);
 		curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
 		curl_setopt ($ch, CURLOPT_FOLLOWLOCATION, 1);// allow redirects
+		curl_setopt ($ch, CURLOPT_RETURNTRANSFER,1);
 		$file_contents=curl_exec($ch);
 		$curl_error=curl_error($ch);
 		curl_close($ch);
 		$domain=str_replace("http://","",$link);
 		$list=split("/",$domain);
 		$domain=$list[0];
-		$file_contents = str_replace("script","",$file_contents);
+		$file_contents = str_replace("script",'!--',$file_contents);
+		$file_contents = str_replace("stylesheet",'',$file_contents);
 		$file_contents = str_replace("http://$domain/","",$file_contents);
 		$file_contents = str_replace("src=\"","src=\"http://$domain/",$file_contents);
-		print $file_contents;
+		print "$file_contents";
+		print "--end of curl--<br>\n";
 	}
 	function print_proxy_data($link)
 	{
