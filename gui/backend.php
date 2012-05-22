@@ -77,6 +77,9 @@
 		case "update_expirey":
 			update_expirey($_REQUEST['id']);
 			break;
+		case "update_exclude_list":
+			update_exclude_list($_REQUEST['id']);
+			break;
 		case "rename_category":
 			rename_category($_REQUEST['id']);
 			break;
@@ -171,6 +174,16 @@
 		if(!$id){return;}
 		$id=(integer)$id;
 		$category->categoryName($id,$new_name);
+		print "Updated...\n";
+	}
+	function update_exclude_list($id)
+	{
+		global $feed;
+		if(!isset($_REQUEST['exclude_list'])){return;}
+		$exclude_list=$_REQUEST['exclude_list'];
+		if(!$id){return;}
+		$id=(integer)$id;
+		$feed->feedExcludeList($id,$exclude_list);
 		print "Updated...\n";
 	}
 	function update_expirey($id)
@@ -294,11 +307,12 @@
 	}
 	function print_feed_menu($feed_id)
 	{
-		global $category,$feed,$entry,$view_options;
-		$title=$feed->feedTitle($feed_id);
-        $link=$feed->feedUrl($feed_id);
-		$expirey=$feed->feedExpirey($feed_id);
-		$autoscroll_px=$feed->feedAutoScroll($feed_id);
+		global 			$category,$feed,$entry,$view_options;
+		$title=			$feed->feedTitle($feed_id);
+        $link=			$feed->feedUrl($feed_id);
+		$expirey=		$feed->feedExpirey($feed_id);
+		$autoscroll_px=	$feed->feedAutoScroll($feed_id);
+		$exclude_list=	$feed->feedExcludeList($feed_id);
 		print "
 			<table>
 			<tr>
@@ -312,9 +326,9 @@
 		print"
 				</div>
 				</td>
-				<td align='right'>
-				<form name='rename_feed_form'>
-				<input type='text' name='rename_feed_text' value='$title'>
+				<td align='right' valign='center'>
+					<form name='rename_feed_form'>
+					<input type='text' size=20 name='rename_feed_text' value='$title'>
 					<input type='button' value='Rename' onclick='rename_feed(this.form)'>
 					</form>
 				</td>
@@ -326,14 +340,20 @@
 				</td>
 				<td>
 					<form name='update_feed_expirey'>
-					<input type='text' name='update_feed_expirey' value='$expirey'>
+					<input type='text' size=10 name='update_feed_expirey' value='$expirey'>
 					<input type='button' value='Update Expirey' onclick='update_expirey(this.form)'>
 					</form>
 				</td>
 				<td>
 					<form name='update_feed_autoscroll'>
-					<input type='text' name='update_feed_autoscroll' value='$autoscroll_px'>
+					<input type='text' size=5 name='update_feed_autoscroll' value='$autoscroll_px'>
 					<input type='button' value='Update Autoscroll' onclick='update_autoscroll(this.form)'>
+					</form>
+				</td>
+				<td>
+					<form name='update_exclude_list'>
+					<input type='text' size=20 name='rename_exclude_text' value='$exclude_list'>
+					<input type='button' value='Exclude' onclick='update_exclude(this.form)'>
 					</form>
 				</td>
 				</tr>
@@ -492,7 +512,7 @@
 		print "<div id='table_container' style='z-index:1;position:relative;opacity:1;background-color:#FFFFFF'>\n";
 		print "<table width='100%'>
 				<tr class='evenunread'>
-				<td width=130>$feedname</td>
+				<td width=150>$feedname</td>
 				<td style='text-overflow:ellipsis;white-space:nowrap;overflow:hidden'>$feedtitle</td>
 			";
 
@@ -518,15 +538,6 @@
 		</div></td>
 		";
 
-		// Print a Google +1 button
-		print '
-		<td align="right" width=22>
-		<g:plusone size="small" annotation="none" href="'. $data['link'].'"></g:plusone>
-		<script type="text/javascript">
-		  (function() { var po = document.createElement("script"); po.type = "text/javascript"; po.async = true; po.src = "https://apis.google.com/js/plusone.js"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(po, s); })();
-		</script>
-		</td>
-		';
 		//Print a tweet button
 			print "<td align='right' width=18><a href='https://twitter.com/home?status=". $data['link']. "' target='_blank' ><img src='025.png' height='15' ></a></td>\n";
 		//Print the new, previous, etc buttons
@@ -534,7 +545,7 @@
 			<td align='right' width=22><a href='".$data['link']. "' target='_blank'>New</a>
 			<td align='right' width=22><a href=\"javascript:showPreviousEntry('$id');\">Previous</a>
 			<td align='right' width=22><a href=\"javascript:showNextEntry('$id');\">Next</a>
-			<td align='right' width=22><div id='EMARKPIC-$id'><img src='images/$markunmark' alt='Set mark' onclick='javascript:toggleMark($id);'></div></td>
+			<td align='right' width=16><div id='EMARKPIC-$id'><img src='images/$markunmark' alt='Set mark' onclick='javascript:toggleMark($id);'></div></td>
 		";
 		if($view_mode == 'default'){print "<td width=11></td>";}
 		print "	</tr></table>";
@@ -557,7 +568,6 @@
 				break;
 			case "default":
 				print "<div style='position:absolute;height:70%;overflow:auto;width:100%' >" . $data["content"] . "</div>\n";
-
 				break;
 		};
 		print "</div>";
