@@ -14,10 +14,10 @@
 <html>
 <head>
   <title>Feedinator</title>
-  <script type="text/javascript" src="include.js"></script><!-- ajax functions -->
   <script type="text/javascript" src="jquery.js"></script>
   <script type="text/javascript" src="jsdump.js"></script>
   <script type="text/javascript" src="widgets.js"></script>
+  <script type="text/javascript" src="include.js"></script><!-- ajax functions -->
   <link rel="stylesheet" href="tt-rss.css" type="text/css">
   <link rel="stylesheet" href="menu.css">
     <style media="screen" type="text/css">
@@ -143,7 +143,7 @@
 		overflow-x:hidden;
 	}
 	.col1 .view {
-		height:100%;
+		height:200%;
 		border:1px solid #979797;
 		overflow:auto;
 		overflow-x:hidden;

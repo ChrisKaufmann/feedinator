@@ -2,10 +2,48 @@
 var backend='http://www.feedinator.com/gui/backend.php';
 var current_view='';		//  category or feed - for what's currently viewed
 var current_view_id='';		//  id of the category or feed currently being viewed.
+var current_entry_id='';	//  id of current entry being viewed
 var set_mark_id='';		//  id of an entry to toggle the mark - normally not used.
 var status_div='left_notify'; //  id of the status div
 var entries_data='';		// hash containing all data about the entries
-
+//Stuff for the arrow navigation, from http://www.tonylea.com/2010/jquery-javascript-arrow-keycodes/
+	KEY_CODES = {
+	  37: 'left',
+	  38: 'up',
+	  39: 'right',
+	  40: 'down'
+	}
+	KEY_STATUS = { keyDown:false };
+	for (code in KEY_CODES) {
+	  KEY_STATUS[KEY_CODES[code]] = false;
+	}
+	$(window).keydown(function (e) {
+	  KEY_STATUS.keyDown = true;
+	  e.preventDefault();
+	  // perform functionality for keydown
+	  if (KEY_CODES[e.keyCode]) {
+	  	if(e.keyCode == 40)//Down Arrow
+	  	{
+	  	}
+	  	else if(e.keyCode == 39)//Right Arrow
+	  	{
+			showNextEntry(current_entry_id);
+	  	}
+	  	else if(e.keyCode == 38)//Up Arrow
+	  	{
+	  	}
+	  	else if(e.keyCode == 37)//Left Arrow
+	  	{
+			showPreviousEntry(current_entry_id);
+	  	}
+	  }
+	}).keyup(function (e) {
+	  KEY_STATUS.keyDown = false;
+	  if (KEY_CODES[e.keyCode]) {	  	
+	    e.preventDefault();
+	    KEY_STATUS[KEY_CODES[e.keyCode]] = false;
+	  }
+	});
 // Take a json array and populate the entries_list_div
 function populate_list()
 {
@@ -58,7 +96,16 @@ function update_link(form)
 	document.getElementById('menu_status').innerHTML='Updating...';
 	var link	=form.update_link_text.value;
 	link		=encodeURIComponent(link);
-	var url		='op=update_feed_link&id='+current_view_id+'&skip_div=1&link='+link;
+	var url		='op=update_feed_link&id='+eurrent_view_id+'&skip_div=1&link='+link;
+	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#menu_status').html(html);}})
+}
+
+//update the exclude list for a given feed
+function update_exclude(form)
+{
+	document.getElementById('menu_status').innerHTML='Updating...';
+	var list	=form.rename_exclude_text.value;
+	var url		='op=update_exclude_list&id='+current_view_id+'&exclude_list='+list;
 	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#menu_status').html(html);}})
 }
 
@@ -110,6 +157,13 @@ function feed_entries(id)
 
 	try{$('#menu_status').text='';}catch(err){} // may be null
 }
+//populate the list_div with read entries
+function view_read()
+{
+	try{document.getElementById('menu_status').innerHTML='Loading...';}catch(err){} // may be nul
+	var url='op='+current_view+'_entries&id=' + current_view_id+'&view_read=1';
+	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#entries_list_div').html(html);}})
+}
 // Set the current_view_id to look read, and the number unread to zero.  
 // Could throw errors if the div has since been hidden or removed.
 function empty_count()
@@ -153,6 +207,7 @@ function show_entry(id)
 	try{previous=entries_data[id].previous_id} catch(err){}
 	try{next=entries_data[id].next_id}catch(err){}
 	list_row=document.getElementById('RROW-'+id);
+	current_entry_id=id;
 	var url='op=view_entry&id='+id;
 	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#view_div').html(html);}})
 	scrollup('view_div');
