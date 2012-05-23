@@ -6,43 +6,18 @@ var current_entry_id='';	//  id of current entry being viewed
 var set_mark_id='';		//  id of an entry to toggle the mark - normally not used.
 var status_div='left_notify'; //  id of the status div
 var entries_data='';		// hash containing all data about the entries
-//Stuff for the arrow navigation, from http://www.tonylea.com/2010/jquery-javascript-arrow-keycodes/
-	KEY_CODES = {
-	  37: 'left',
-	  38: 'up',
-	  39: 'right',
-	  40: 'down'
-	}
-	KEY_STATUS = { keyDown:false };
-	for (code in KEY_CODES) {
-	  KEY_STATUS[KEY_CODES[code]] = false;
-	}
+//Stuff for the arrow navigation, from http://api.jquery.com/keydown/
 	$(window).keydown(function (e) {
-	  KEY_STATUS.keyDown = true;
-	  e.preventDefault();
-	  // perform functionality for keydown
-	  if (KEY_CODES[e.keyCode]) {
-	  	if(e.keyCode == 40)//Down Arrow
-	  	{
-	  	}
-	  	else if(e.keyCode == 39)//Right Arrow
-	  	{
+		if(e.which==39)
+		{
+	  		e.preventDefault();
 			showNextEntry(current_entry_id);
-	  	}
-	  	else if(e.keyCode == 38)//Up Arrow
-	  	{
-	  	}
-	  	else if(e.keyCode == 37)//Left Arrow
-	  	{
+		}
+		else if(e.which==37)
+		{
+			e.preventDefault();
 			showPreviousEntry(current_entry_id);
-	  	}
-	  }
-	}).keyup(function (e) {
-	  KEY_STATUS.keyDown = false;
-	  if (KEY_CODES[e.keyCode]) {	  	
-	    e.preventDefault();
-	    KEY_STATUS[KEY_CODES[e.keyCode]] = false;
-	  }
+		}
 	});
 // Take a json array and populate the entries_list_div
 function populate_list()
