@@ -32,8 +32,8 @@
 		case "unread_feed":
 			unread_feed();
 			break;
-		case "unread_category":
-			unread_category();
+		case "read_category":
+			read_feed();
 			break;
 		case "togglemark":
 			toggle_mark();
@@ -567,7 +567,7 @@
 				viewExtendedPage($data['link']);
 				break;
 			case "default":
-				print "<div style='position:absolute;height:70%;overflow:auto;width:100%' >" . $data["content"] . "</div>\n";
+				print "<div id='entry_content' style='position:absolute;height:70%;overflow:auto;width:100%' >" . $data["content"] . "</div>\n";
 				break;
 		};
 		print "</div>";
@@ -698,11 +698,17 @@
 		global $feed,$entry;
 		$id=$_REQUEST['id'];
 		if(!$id){print "No id for print_feed_entries<br>\n";return;}
-		$entry_list=$feed->unreadEntries($id);
-		$unread_entry_list=$feed->readEntries($id,100);
-		if(!$entry_list && !$unread_entry_list){print "No entries found";return;}
+		if(!isset($_REQUEST['view_unread']))
+		{
+			$entry_list=$feed->unreadEntries($id);
+		}
+		else
+		{
+			$entry_list=$feed->readEntries($id,1);
+		}
+		#$unread_entry_list=$feed->readEntries($id,100);
+		#if(!$entry_list && !$unread_entry_list){print "No entries found";return;}
 		print_entry_list($entry_list,'feed');
-		print_entry_list($unread_entry_list,'feed',1);
 		exit();
 	}
 	//

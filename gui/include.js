@@ -87,7 +87,7 @@ function update_exclude(form)
 //toggle the visibility of a given passed div id
 function toggle_visible(id)
 {
-	$('#'+id).toggle("slow");
+	$('#'+id).toggle();
 }
 
 // Hides the table row of a given id, and makes an ajax call to mark read in the backend.
@@ -184,10 +184,20 @@ function show_entry(id)
 	list_row=document.getElementById('RROW-'+id);
 	current_entry_id=id;
 	var url='op=view_entry&id='+id;
-	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#view_div').html(html);}})
+	$.ajax({type: "GET",url: backend, data:url,success:function(html){
+		$('#view_div').html(html);
+		// If the entries list is hidden, we have to change the height or it's irritating
+		if($('#entries_list_div').is(":hidden")){
+		    $('#content_container').css("height","95%");
+			$('#entry_content').css("height","95%");
+		} else {
+			$('#content_container').css("height","70%");
+			$('#entry_content').css("height","70%");
+		}
+	}})
 	scrollup('view_div');
-	if(list_row.className.match(/unread/) == 'unread'){decrement_count();}
-	list_row.className=list_row.className.replace("unread","");
+	try{if(list_row.className.match(/unread/) == 'unread'){decrement_count();}}catch(err){}
+	try{list_row.className=list_row.className.replace("unread","");}catch(err){}
 }
 // Populates the feeds_div with a list of feeds.
 function feedList()
