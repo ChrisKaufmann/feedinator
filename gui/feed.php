@@ -80,6 +80,13 @@ class Feed
 		$data=$this->feedData($id);
 		return $data['expirey'];
 	}
+	function feedExcludeList($id,$newlist='')
+	{
+		if(!$id){return;}
+		if($newlist){$this->updatefield($id,'exclude',$newlist);}
+		$data=$this->feedData($id);
+		return $data['exclude'];
+	}
 	function feedDelete($id)
 	{
 		global $database;
@@ -160,9 +167,9 @@ class Feed
 		$sql="select id from ".$this->entries_table." where feed_id='$id' and unread='0' $countwhere order by updated DESC";
 		$list=array();
 		while($vals=mysql_fetch_array($result))
-                {
-                        $list[]=$vals['id'];
-                }
+		{
+			$list[]=$vals['id'];
+		}
                 return $list;
 	}
 	function readunreadEntries($id,$count,$skip=0)

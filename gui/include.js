@@ -127,7 +127,12 @@ function feed_entries(id)
 	var url='op=feed_entries&id=' + id;
 	var jsonurl='op=json_feed_entries&id=' + id;
 	scrollup(div)
-	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#entries_list_div').html(html);}})
+	$.ajax({type: "GET",url: backend, data:url,success:function(html){
+		$('#entries_list_div').html(html);
+		if($('#entries_list_div').is(":hidden")){
+			$('#entries_list_div').toggle();
+        }
+	}})
 	$.ajax({type: "GET",url: backend, data:menuurl,success:function(html){$('#settings_div').html(html);}})
 
 	try{$('#menu_status').text='';}catch(err){} // may be null
