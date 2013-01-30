@@ -88,6 +88,7 @@ function update_exclude(form)
 function toggle_visible(id)
 {
 	$('#'+id).toggle();
+	set_entryview();
 }
 
 // Hides the table row of a given id, and makes an ajax call to mark read in the backend.
@@ -168,6 +169,18 @@ function decrement_count()
 	document.getElementById(cr_view_div).innerHTML=current_value;
 	if(current_value<=0){empty_count();}
 }
+//Set the height of the content and entry divs 
+function set_entryview()
+{
+	// If the entries list is hidden, we have to change the height or it's irritating
+	if($('#entries_list_div').is(":hidden")){
+		$('#content_container').css("height","95%");
+		$('#entry_content').css("height","95%");
+	} else {
+		$('#content_container').css("height","70%");
+		$('#entry_content').css("height","70%");
+	}
+}
 //populate list_div with the entries for a given category id
 function category_entries(id)
 {
@@ -179,7 +192,12 @@ function category_entries(id)
 	var url='op=category_entries&id='+id;
 	scrollup(div);
 	$.ajax({type: "GET",url: backend, data:menuurl,success:function(html){$('#settings_div').html(html);}})
-	$.ajax({type: "GET",url: backend, data:url,success:function(html){$('#entries_list_div').html(html);}})
+	$.ajax({type: "GET",url: backend, data:url,success:function(html){
+		$('#entries_list_div').html(html);
+		if($('#entries_list_div').is(":hidden")){
+			$('#entries_list_div').toggle();
+		}
+	}})
 }
 // Populates view_div with the content for a given id.
 function show_entry(id)
@@ -191,14 +209,7 @@ function show_entry(id)
 	var url='op=view_entry&id='+id;
 	$.ajax({type: "GET",url: backend, data:url,success:function(html){
 		$('#view_div').html(html);
-		// If the entries list is hidden, we have to change the height or it's irritating
-		if($('#entries_list_div').is(":hidden")){
-		    $('#content_container').css("height","95%");
-			$('#entry_content').css("height","95%");
-		} else {
-			$('#content_container').css("height","70%");
-			$('#entry_content').css("height","70%");
-		}
+		set_entryview();
 	}})
 	scrollup('view_div');
 	try{if(list_row.className.match(/unread/) == 'unread'){decrement_count();}}catch(err){}
